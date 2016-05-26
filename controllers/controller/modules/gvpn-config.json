@@ -1,8 +1,8 @@
 {
   "CFx": {
-    "xmpp_username": "sam_pop@dukgo.com",
-    "xmpp_password": "acis-ipop1",
-    "xmpp_host": "dukgo.com",
+    "xmpp_username": "xxxxxx",
+    "xmpp_password": "xxxxxx",
+    "xmpp_host": "xxxxx",
     "xmpp_port": 5222,
     "tincan_logging": 2,
     "vpn_type": "GroupVPN",
