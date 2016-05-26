@@ -63,9 +63,9 @@
  "XmppClient": {
   "enabled": true,
   "ip4": "172.31.0.100",
-  "username": "sam_pop@dukgo.com",
-  "password": "acis-ipop1",
-  "xmpp_host": "dukgo.com",
+  "username": "xxxxxxxx",
+  "password": "xxxxxxx",
+  "xmpp_host": "xxxxxxxx",
   "timer_interval": 5,
   "dependencies":["Logger"]
  }
