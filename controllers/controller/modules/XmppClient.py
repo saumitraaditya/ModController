@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import thread
 import json
+import time
 from controller.framework.ControllerModule import ControllerModule
 import controller.framework.fxlib as fxlib
 import sleekxmpp
@@ -33,6 +34,16 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         self.xmpp_passwd = self.CMConfig.get("password")
         self.xmpp_host = self.CMConfig.get("xmpp_host")
         self.uid = ""
+        # time of last recvd xmpp advt.
+        self.last_sent_advt = 0
+        # keeps track of if xmpp advt recvd in interval
+        self.xmpp_advt_recvd = True
+        # Initial ADVT Delay
+        self.INITIAL_ADVT_DELAY =5
+        # interval between sending advertisements
+        self.advt_delay = self.INITIAL_ADVT_DELAY
+        # Maximum delay between advertisements is 10 minutes
+        self.MAX_ADVT_DELAY = 600 
         # initialize the base Xmpp client class
         sleekxmpp.ClientXMPP.__init__(self,self.xmpp_username,self.xmpp_passwd)
         # register a new plugin stanza and handler for it,
@@ -99,7 +110,10 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 msg["data"] = payload
                 msg["type"] = "xmpp_advertisement"
                 self.registerCBT('BaseTopologyManager','XMPP_MSG',msg)
+                # refresh xmpp advt recvd flag
+                self.xmpp_advt_recvd = True
                 self.log("recvd xmpp_advt from {0}".format(msg["uid"]))
+                
         # compare uid's here , if target uid does not match with mine do nothing.
         # have to avoid loop messages.
         if (target_uid == self.uid):
@@ -162,7 +176,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
             content_load = msg_payload
            
         msg = self.Message()
-        msg['to'] = peer_jid
+        msg['to'] = peer_jid.bare
         msg['type'] = 'chat'
         msg['Ipop']['setup'] = setup_load
         msg['Ipop']['payload'] = content_load
@@ -173,8 +187,10 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         try:
             if (self.connect(address = (self.xmpp_host,5222))):
                 thread.start_new_thread(self.process,())
+                self.log("Started XMPP handling")
+                
         except:
-            self.log("Unable to start XMPP handling thread.",severity='error')
+            self.log("Unable to start XMPP handling thread-Check Internet connectivity/credentials.",severity='error')
             
     def log(self,msg,severity='info'):
         self.registerCBT('Logger',severity,msg)
@@ -213,15 +229,38 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 msg_payload = self.uid+"#"+data
                 self.sendMsg(peer_jid,setup_load,msg_payload)
                 self.log("sent ping to {0}".format(self.uid_jid[peer_uid]))
+                
+    def sendXmppAdvt(self):
+        for peer in self.xmpp_peers.keys():
+            if (self.uid != ""):
+                setup_load = "xmpp_advertisement"+"#"+"None"
+                msg_load = str(self.uid)
+                self.sendMsg(peer,setup_load,msg_load)
+                self.log("sent xmpp_advt to {0}".format(peer))
         
     def timer_method(self):
         try:
-            for peer in self.xmpp_peers.keys():
-                if (self.uid != ""):
-                    setup_load = "xmpp_advertisement"+"#"+"None"
-                    msg_load = str(self.uid)
-                    self.sendMsg(peer,setup_load,msg_load)
-                    self.log("sent xmpp_advt to {0}".format(peer))
+            if (time.time() - self.last_sent_advt > self.advt_delay):
+                # see if I recvd a advertisement in this time period
+                # if yes than XMPP link is open
+                if (self.xmpp_advt_recvd == True):
+                    self.sendXmppAdvt()
+                    # update xmpp tracking parameters.
+                    self.last_sent_advt = time.time()
+                    self.xmpp_advt_recvd = False
+                    self.advt_delay = self.INITIAL_ADVT_DELAY
+                # Have not heard from anyone in a while
+                elif (self.advt_delay < self.MAX_ADVT_DELAY):
+                        self.advt_delay = 2 * self.advt_delay
+                        self.log("Delaying the XMPP advt timer \
+                            to {0} seconds".format(self.advt_delay))
+                else:
+                    # send the advertisement anyway.
+                    self.sendXmppAdvt()
+                    # update xmpp tracking parameters.
+                    self.last_sent_advt = time.time()
+                    self.xmpp_advt_recvd = False
+                            
         except:
             self.log("Exception in XmppClient timer")
             
