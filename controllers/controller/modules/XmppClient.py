@@ -46,7 +46,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         self.MAX_ADVT_DELAY = 600 
         # initialize the base Xmpp client class
         sleekxmpp.ClientXMPP.__init__(self,self.xmpp_username,self.xmpp_passwd,sasl_mech='PLAIN')
-        self.['feature_mechanisms'].unencrypted_plain = True
+        self['feature_mechanisms'].unencrypted_plain = True
         # register a new plugin stanza and handler for it,
         # whenever a matching message will be received on 
         # the xmpp stream , registered handler will be called.
