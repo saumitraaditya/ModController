@@ -45,7 +45,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         # Maximum delay between advertisements is 10 minutes
         self.MAX_ADVT_DELAY = 600 
         # initialize the base Xmpp client class
-        sleekxmpp.ClientXMPP.__init__(self,self.xmpp_username,self.xmpp_passwd)
+        sleekxmpp.ClientXMPP.__init__(self,self.xmpp_username,self.xmpp_passwd,sasl_mech='PLAIN')
         # register a new plugin stanza and handler for it,
         # whenever a matching message will be received on 
         # the xmpp stream , registered handler will be called.
