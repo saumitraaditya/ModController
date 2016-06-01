@@ -30,6 +30,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         self.xmpp_peers = defaultdict(int)
         # need to maintain uid<->jid mapping to route xmpp messages.
         self.uid_jid = {}
+        self.jid_uid = defaultdict(lambda:['',False])
         self.xmpp_username = self.CMConfig.get("username")
         self.xmpp_passwd = self.CMConfig.get("password")
         self.xmpp_host = self.CMConfig.get("xmpp_host")
@@ -103,12 +104,20 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 self.log("Recvd mesage from {0}".format(msg['from']))
                 self.log("Msg is {0}".format(payload))
         elif (msg_type == "xmpp_advertisement"):
-            peer_uid = payload
+            # peer_uid - uid of the node that sent the advt
+            # target_uid - what it percieves as my uid
+            peer_uid,target_uid = payload.split("#")
             if (peer_uid != self.uid):
                 self.uid_jid[peer_uid]=msg['from']
+                self.jid_uid[msg['from']][0] = peer_uid
+                # sender knows my uid, so I will not send an advert to him
+                if (target_uid == self.uid):
+                    self.jid_uid[msg['from']][1] = True
+                else:
+                   self.jid_uid[msg['from']][1] = False 
                 msg = {}
                 msg["uid"] = peer_uid
-                msg["data"] = payload
+                msg["data"] = peer_uid
                 msg["type"] = "xmpp_advertisement"
                 self.registerCBT('BaseTopologyManager','XMPP_MSG',msg)
                 # refresh xmpp advt recvd flag
@@ -232,12 +241,13 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 self.log("sent ping to {0}".format(self.uid_jid[peer_uid]))
                 
     def sendXmppAdvt(self):
-        for peer in self.xmpp_peers.keys():
-            if (self.uid != ""):
-                setup_load = "xmpp_advertisement"+"#"+"None"
-                msg_load = str(self.uid)
-                self.sendMsg(peer,setup_load,msg_load)
-                self.log("sent xmpp_advt to {0}".format(peer))
+        if (self.uid != ""):
+            for peer in self.xmpp_peers.keys():
+                if (self.jid_uid[peer][1] == False):
+                    setup_load = "xmpp_advertisement"+"#"+"None"
+                    msg_load = str(self.uid) + "#" + str(self.jid_uid[peer][0])
+                    self.sendMsg(peer,setup_load,msg_load)
+                    self.log("sent xmpp_advt to {0}".format(peer))
         
     def timer_method(self):
         try:
