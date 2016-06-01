@@ -54,7 +54,7 @@ class TincanSender(ControllerModule):
                                   dest_addr=dest_addr, dest_port=dest_port,
                                   payload=None, type="echo_reply")
 
-        elif cbt.action == 'DO_SEND_ICC_MSG':
+        elif cbt.action == '_msg_ICC_MSG':
             src_uid = cbt.data.get('src_uid')
             dst_uid = cbt.data.get('dst_uid')
             icc_type = cbt.data.get('icc_type')
