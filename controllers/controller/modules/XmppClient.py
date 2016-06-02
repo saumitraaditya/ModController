@@ -130,8 +130,10 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         # compare uid's here , if target uid does not match with mine do nothing.
         # have to avoid loop messages.
         if (target_uid == self.uid):
+            sender_uid,recvd_data = payload.split("#")
+            # If I recvd XMPP msg from this peer, I should record his UID-JID
+            self.uid_jid[sender_uid]=msg['from']
             if (msg_type == "con_req"):
-                sender_uid,recvd_data = payload.split("#")
                 msg = {}
                 msg["uid"] = sender_uid
                 msg["data"] = recvd_data
@@ -141,7 +143,6 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 self.log("recvd con_req from {0}".format(msg["uid"]))
                 
             elif (msg_type == "con_resp"):
-                sender_uid,recvd_data = payload.split("#")
                 msg = {}
                 msg["uid"] = sender_uid
                 msg["data"] = recvd_data
@@ -150,7 +151,6 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 self.log("recvd con_resp from {0}".format(msg["uid"]))
                 
             elif (msg_type == "con_ack"):
-                sender_uid,recvd_data = payload.split("#")
                 msg = {}
                 msg["uid"] = sender_uid
                 msg["data"] = recvd_data
@@ -159,7 +159,6 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 self.log("recvd con_ack from {0}".format(msg["uid"]))
                 
             elif (msg_type == "ping_resp"):
-                sender_uid,recvd_data = payload.split("#")
                 msg = {}
                 msg["uid"] = sender_uid
                 msg["data"] = recvd_data
@@ -168,7 +167,6 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 self.log("recvd ping_resp from {0}".format(msg["uid"]))
                 
             elif (msg_type == "ping"):
-                sender_uid,recvd_data = payload.split("#")
                 msg = {}
                 msg["uid"] = sender_uid
                 msg["data"] = recvd_data

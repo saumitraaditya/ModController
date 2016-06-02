@@ -106,23 +106,26 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         elif (msg_type == "xmpp_advertisement"):
             # peer_uid - uid of the node that sent the advt
             # target_uid - what it percieves as my uid
-            peer_uid,target_uid = payload.split("#")
-            if (peer_uid != self.uid):
-                self.uid_jid[peer_uid]=msg['from']
-                self.jid_uid[msg['from']][0] = peer_uid
-                # sender knows my uid, so I will not send an advert to him
-                if (target_uid == self.uid):
-                    self.jid_uid[msg['from']][1] = True
-                else:
-                   self.jid_uid[msg['from']][1] = False 
-                msg = {}
-                msg["uid"] = peer_uid
-                msg["data"] = peer_uid
-                msg["type"] = "xmpp_advertisement"
-                self.registerCBT('BaseTopologyManager','XMPP_MSG',msg)
-                # refresh xmpp advt recvd flag
-                self.xmpp_advt_recvd = True
-                self.log("recvd xmpp_advt from {0}".format(msg["uid"]))
+            try:
+                peer_uid,target_uid = payload.split("#")
+                if (peer_uid != self.uid):
+                    self.uid_jid[peer_uid]=msg['from']
+                    self.jid_uid[msg['from']][0] = peer_uid
+                    # sender knows my uid, so I will not send an advert to him
+                    if (target_uid == self.uid):
+                        self.jid_uid[msg['from']][1] = True
+                    else:
+                       self.jid_uid[msg['from']][1] = False 
+                    msg = {}
+                    msg["uid"] = peer_uid
+                    msg["data"] = peer_uid
+                    msg["type"] = "xmpp_advertisement"
+                    self.registerCBT('BaseTopologyManager','XMPP_MSG',msg)
+                    # refresh xmpp advt recvd flag
+                    self.xmpp_advt_recvd = True
+                    self.log("recvd xmpp_advt from {0}".format(msg["uid"]))
+            except:
+                self.log("advt_payload: {0}".format(payload))
                 
         # compare uid's here , if target uid does not match with mine do nothing.
         # have to avoid loop messages.
