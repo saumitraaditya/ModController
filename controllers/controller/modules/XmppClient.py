@@ -99,7 +99,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         setup = str(msg['Ipop']['setup'])
         payload = str(msg['Ipop']['payload'])
         msg_type,target_uid,target_jid = setup.split("#")
-        sender_jid = =msg['from']
+        sender_jid = msg['from']
         
         if (msg_type == "regular_msg"):
                 self.log("Recvd mesage from {0}".format(msg['from']))

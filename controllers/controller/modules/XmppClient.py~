@@ -99,6 +99,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         setup = str(msg['Ipop']['setup'])
         payload = str(msg['Ipop']['payload'])
         msg_type,target_uid,target_jid = setup.split("#")
+        sender_jid = =msg['from']
         
         if (msg_type == "regular_msg"):
                 self.log("Recvd mesage from {0}".format(msg['from']))
@@ -109,7 +110,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
             try:
                 peer_uid,target_uid = payload.split("#")
                 if (peer_uid != self.uid):
-                    self.uid_jid[peer_uid]=msg['from']
+                    self.uid_jid[peer_uid] = sender_jid
                     self.jid_uid[msg['from']][0] = peer_uid
                     # sender knows my uid, so I will not send an advert to him
                     if (target_uid == self.uid):
@@ -132,7 +133,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         if (target_uid == self.uid):
             sender_uid,recvd_data = payload.split("#")
             # If I recvd XMPP msg from this peer, I should record his UID-JID
-            self.uid_jid[sender_uid]=msg['from']
+            self.uid_jid[sender_uid] = sender_jid
             if (msg_type == "con_req"):
                 msg = {}
                 msg["uid"] = sender_uid
