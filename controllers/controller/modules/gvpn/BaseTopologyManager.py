@@ -141,6 +141,8 @@ class BaseTopologyManager(ControllerModule):
         }
 
         self.send_msg_srv("con_ack", uid, json.dumps(data))
+        log = "sent con_ack to {0}".format(uid)
+        self.registerCBT('Logger','info', log)
 
     # create connection
     #   establish a tincan link
@@ -225,18 +227,22 @@ class BaseTopologyManager(ControllerModule):
     # add inbound link
     def add_inbound_link(self, con_type, uid, fpr):
 
+        
+        # recvd con_req and already linked to the sender
+        if (uid in self.peers.keys()):
+            log_msg = "Recvd con_req for peer in list from {0}".format(uid)
+            self.registerCBT('Logger','info',log_msg)
+            # if the link to the sender is active trim the link
+            # and ignore the request
+            if (self.peers[uid]["con_status"] != "unknown"):
+                log_msg = "Recvd con_req for peer in list from {0} not in UNKNOWN status: {1}".format(uid,self.peers[uid]["con_status"])
+                self.registerCBT('Logger','info',log_msg)
+                self.remove_connection(uid)
+                return
+                
         # peer is not in the peers list, or
-        # peer is in the list and this node's uid is smaller (race avoidance)
+        # peer is in the list and this node's uid is smaller (race avoidance)      
         if (uid not in self.peers.keys()) or (uid in self.peers.keys() and self.uid < uid):
-            # it is quite possible that this is a request from peer to 
-            # create a link with him after he has trimmed a link with me,
-            # and I already have an active link to him. In order for me to get 
-            # my candidate set I will have flush and re-establish the 
-            # connection
-            
-            # remove connection
-            self.remove_connection(uid)
-
             # add peer to peers list
             self.peers[uid] = {
                 "uid": uid,
@@ -246,6 +252,7 @@ class BaseTopologyManager(ControllerModule):
 
             # connection response
             self.respond_connection(con_type, uid, fpr)
+            
 
     # remove link
     def remove_link(self, con_type, uid):

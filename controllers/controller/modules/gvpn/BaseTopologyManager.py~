@@ -234,6 +234,8 @@ class BaseTopologyManager(ControllerModule):
             # my candidate set I will have flush and re-establish the 
             # connection
             
+            # remove connection
+            self.remove_connection(uid)
 
             # add peer to peers list
             self.peers[uid] = {
