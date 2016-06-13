@@ -220,7 +220,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
             except:
                 log_msg = "UID-JID mapping for UID: {0} not present.\
                             msg: {1} will not be sent.".format(peer_uid,method)
-                self.log(log_msg))
+                self.log(log_msg)
                 return
             data = cbt.data.get("data")
             if (method == "con_req"):
