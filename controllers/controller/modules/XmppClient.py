@@ -214,7 +214,13 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         if (cbt.action == "DO_SEND_MSG"):
             method  = cbt.data.get("method")
             peer_uid = cbt.data.get("uid")
-            peer_jid = self.uid_jid[peer_uid]
+            try:
+                peer_jid = self.uid_jid[peer_uid]
+            except:
+                log_msg = "UID-JID mapping for UID: {0} not present.\
+                            msg: {1} will not be sent.".format(peer_uid,method)
+                self.log(log_msg))
+                return
             data = cbt.data.get("data")
             if (method == "con_req"):
                 setup_load = "con_req"+"#"+peer_uid
