@@ -1,9 +1,5 @@
 {
   "CFx": {
-    "xmpp_username": "xxxxxx",
-    "xmpp_password": "xxxxxx",
-    "xmpp_host": "xxxxx",
-    "xmpp_port": 5222,
     "tincan_logging": 2,
     "vpn_type": "GroupVPN",
     "ip4_mask": 16
@@ -63,10 +59,11 @@
  "XmppClient": {
   "enabled": true,
   "ip4": "172.31.0.100",
-  "username": "xxxxxxxx",
-  "password": "xxxxxxx",
+  "xmpp_username": "xxxxxxxx",
+  "xmpp_password": "xxxxxxx",
   "xmpp_host": "xxxxxxxx",
+  "xmpp_port": 5222,
   "timer_interval": 5,
-  "dependencies":["Logger"]
+  "dependencies":["Logger","BaseTopologyManager"]
  }
 }

@@ -31,9 +31,10 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         # need to maintain uid<->jid mapping to route xmpp messages.
         self.uid_jid = {}
         self.jid_uid = defaultdict(lambda:['',False])
-        self.xmpp_username = self.CMConfig.get("username")
-        self.xmpp_passwd = self.CMConfig.get("password")
+        self.xmpp_username = self.CMConfig.get("xmpp_username")
+        self.xmpp_passwd = self.CMConfig.get("xmpp_password")
         self.xmpp_host = self.CMConfig.get("xmpp_host")
+        self.xmpp_port = self.CMConfig.get("xmpp_port")
         self.uid = ""
         # time of last recvd xmpp advt.
         self.last_sent_advt = 0
@@ -197,7 +198,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         
     def xmpp_handler(self):
         try:
-            if (self.connect(address = (self.xmpp_host,5222))):
+            if (self.connect(address = (self.xmpp_host,self.xmpp_port))):
                 thread.start_new_thread(self.process,())
                 self.log("Started XMPP handling")
                 
