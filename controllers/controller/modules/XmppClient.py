@@ -65,7 +65,8 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         self.ip4_uid_table = {}
         # populate uid_ip4_table and ip4_uid_table with all UID and IPv4
         # mappings within the /16 subnet
-        parts = self.CMConfig["ip4"].split(".")
+        self.ip4 = self.CFxHandle.queryParam("ip4")
+        parts = self.ip4.split(".")
         ip_prefix = parts[0] + "." + parts[1] + "."
         for i in range(0, 255):
             for j in range(0, 255):

@@ -30,7 +30,7 @@ class CFX(object):
         self.vpn_type = self.CONFIG['CFx']['vpn_type']
         
         if self.vpn_type == 'GroupVPN':
-            self.ip4 = self.CONFIG['BaseTopologyManager']["ip4"]
+            self.ip4 = self.CONFIG['CFx']["ip4"]
             self.uid = fxlib.gen_uid(self.ip4)  # SHA-1 Hash
         elif self.vpn_type == 'SocialVPN':
             self.ip4 = self.CONFIG['AddressMapper']["ip4"]
@@ -337,9 +337,11 @@ class CFX(object):
         elif ParamName == "local_uid":
             return self.CONFIG["CFx"][ParamName]
         elif ParamName == "xmpp_username":
-            return self.CONFIG["CFx"][ParamName]
+            return self.CONFIG["XmppClient"][ParamName]
         elif ParamName == "vpn_type":
             return self.CONFIG["CFx"][ParamName]
         elif ParamName == "ipopVerRel":
+            return self.CONFIG["CFx"][ParamName]
+        elif ParamName == "ip4":
             return self.CONFIG["CFx"][ParamName]
         return None
