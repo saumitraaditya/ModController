@@ -73,7 +73,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 uid = fxlib.gen_uid(ip4)
                 self.uid_ip4_table[uid] = ip4
                 self.ip4_uid_table[ip4] = uid
-        self.uid = self.ip4_uid_table[self.CMConfig["ip4"]]
+        self.uid = self.ip4_uid_table[self.CFxHandle.queryParam("ip4")]
         # Start xmpp handling thread
         self.xmpp_handler()
         
