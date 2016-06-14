@@ -46,9 +46,26 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         self.advt_delay = self.INITIAL_ADVT_DELAY
         # Maximum delay between advertisements is 10 minutes
         self.MAX_ADVT_DELAY = 600 
-        # initialize the base Xmpp client class
-        sleekxmpp.ClientXMPP.__init__(self,self.xmpp_username,self.xmpp_passwd,sasl_mech='PLAIN')
-        self['feature_mechanisms'].unencrypted_plain = True
+        # initialize the base Xmpp client class, handle login/authentication.
+        if self.CMConfig.get("xmpp_authentication_method")=="x509" and \
+            (self.CMConfig.get("xmpp_username")!= None \
+                or self.CMConfig.get("xmpp_password")!= None):
+            raise RuntimeError("x509 Authentication Exception. Username or Password present in IPOP configuration file.")
+
+        use_tls = True
+        if self.CMConfig.get("xmpp_authentication_method")=="x509":
+            sleekxmpp.ClientXMPP.__init__(self,self.xmpp_host,self.xmpp_passwd,sasl_mech='EXTERNAL')
+            self.ssl_version = ssl.PROTOCOL_TLSv1
+            self.ca_certs = self.CMConfig.get("truststore")
+            self.certfile = self.CMConfig.get("certdirectory")+self.CMConfig.get("certfile")
+            self.keyfile = self.CMConfig.get("certdirectory")+self.CMConfig.get("keyfile")
+        else:
+            sleekxmpp.ClientXMPP.__init__(self, self.xmpp_username, self.xmpp_passwd, sasl_mech='PLAIN')
+            if self.CMConfig.get("xmpp_accept_untrusted_server")==True:
+                self['feature_mechanisms'].unencrypted_plain = True
+                use_tls = False
+            else:
+                self.ca_certs = self.CMConfig.get("truststore")
         # register a new plugin stanza and handler for it,
         # whenever a matching message will be received on 
         # the xmpp stream , registered handler will be called.
