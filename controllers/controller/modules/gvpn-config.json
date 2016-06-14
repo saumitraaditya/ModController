@@ -58,7 +58,6 @@
   },
  "XmppClient": {
   "enabled": true,
-  "ip4": "172.31.0.100",
   "xmpp_username": "xxxxxxxx",
   "xmpp_password": "xxxxxxx",
   "xmpp_host": "xxxxxxxx",
