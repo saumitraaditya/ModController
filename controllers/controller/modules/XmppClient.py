@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import thread
+import sys
 import json
 import time
 from controller.framework.ControllerModule import ControllerModule
@@ -13,6 +13,12 @@ from sleekxmpp.xmlstream.matcher import StanzaPath
 from sleekxmpp.stanza.message import Message
 from sleekxmpp.plugins.base import base_plugin
 
+py_ver = sys.version_info[0]
+
+if py_ver == 3:
+    import _thread as thread
+else:
+    import thread
 
 #set up a new custom message stanza
 class Ipop_Msg(ElementBase):
@@ -207,10 +213,13 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
             
     def sendMsg(self,peer_jid,setup_load=None,msg_payload=None):
         if (setup_load == None):
-            setup_load = unicode("regular_msg" + "#" + "None" + "#" + peer_jid.full)
+            setup_load = "regular_msg" + "#" + "None" + "#" + peer_jid.full
         else:
-            setup_load = unicode(setup_load + "#" + peer_jid.full)
-       
+            setup_load = setup_load + "#" + peer_jid.full
+
+        if py_ver != 3:
+            setup_load = unicode(setup_load)
+
         if (msg_payload==None):
             content_load = "Hello there this is {0}".format(self.xmpp_username)
         else:
@@ -319,7 +328,6 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                     # update xmpp tracking parameters.
                     self.last_sent_advt = time.time()
                     self.xmpp_advt_recvd = False
-                            
         except:
             self.log("Exception in XmppClient timer")
             
