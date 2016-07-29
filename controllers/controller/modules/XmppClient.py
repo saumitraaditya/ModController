@@ -35,6 +35,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         self.xmpp_passwd = self.CMConfig.get("xmpp_password")
         self.xmpp_host = self.CMConfig.get("xmpp_host")
         self.xmpp_port = self.CMConfig.get("xmpp_port")
+        self.vpn_type = self.CFxHandle.queryParam("vpn_type")
         self.uid = ""
         # time of last recvd xmpp advt.
         self.last_sent_advt = 0
@@ -82,15 +83,18 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         self.ip4_uid_table = {}
         # populate uid_ip4_table and ip4_uid_table with all UID and IPv4
         # mappings within the /16 subnet
-        parts = self.CFxHandle.queryParam("ip4").split(".")
-        ip_prefix = parts[0] + "." + parts[1] + "."
-        for i in range(0, 255):
-            for j in range(0, 255):
-                ip4 = ip_prefix + str(i) + "." + str(j)
-                uid = fxlib.gen_uid(ip4)
-                self.uid_ip4_table[uid] = ip4
-                self.ip4_uid_table[ip4] = uid
-        self.uid = self.ip4_uid_table[self.CFxHandle.queryParam("ip4")]
+        if (self.vpn_type == "GroupVPN"):
+            parts = self.CFxHandle.queryParam("ip4").split(".")
+            ip_prefix = parts[0] + "." + parts[1] + "."
+            for i in range(0, 255):
+                for j in range(0, 255):
+                    ip4 = ip_prefix + str(i) + "." + str(j)
+                    uid = fxlib.gen_uid(ip4)
+                    self.uid_ip4_table[uid] = ip4
+                    self.ip4_uid_table[ip4] = uid
+            self.uid = self.ip4_uid_table[self.CFxHandle.queryParam("ip4")]
+        elif (self.vpn_type == "SocialVPN"):
+            self.registerCBT('Watchdog', 'QUERY_IPOP_STATE')
         # Start xmpp handling thread
         self.xmpp_handler()
         
@@ -113,6 +117,9 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
     # extracts the setup and payload and takes suitable action depending on the 
     # them.
     def MsgListener(self,msg):
+        if (self.uid == ""):
+            self.log("UID not yet received- Not Ready.")
+            return
         # extract setup and content
         setup = str(msg['Ipop']['setup'])
         payload = str(msg['Ipop']['payload'])
@@ -139,7 +146,10 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                     msg["uid"] = peer_uid
                     msg["data"] = peer_uid
                     msg["type"] = "xmpp_advertisement"
-                    self.registerCBT('BaseTopologyManager','XMPP_MSG',msg)
+                    if (self.vpn_type == "GroupVPN"):
+                        self.registerCBT('BaseTopologyManager','XMPP_MSG',msg)
+                    elif (self.vpn_type == "SocialVPN"):
+                        self.registerCBT('Watchdog','XMPP_MSG',msg)
                     # refresh xmpp advt recvd flag
                     self.xmpp_advt_recvd = True
                     self.log("recvd xmpp_advt from {0}".format(msg["uid"]))
@@ -150,8 +160,9 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         # have to avoid loop messages.
         if (target_uid == self.uid):
             sender_uid,recvd_data = payload.split("#")
-            # If I recvd XMPP msg from this peer, I should record his UID-JID
+            # If I recvd XMPP msg from this peer, I should record his UID-JID & JID-UID
             self.uid_jid[sender_uid] = sender_jid
+            self.jid_uid[sender_jid][0] = sender_uid
             if (msg_type == "con_req"):
                 msg = {}
                 msg["uid"] = sender_uid
@@ -229,7 +240,14 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         self.log("{0} module Loaded".format(self.ModuleName))
         
     def processCBT(self, cbt):
+        if (cbt.action == 'QUERY_IPOP_STATE_RESP'):
+            if cbt.data != None:
+                self.uid = cbt.data["_uid"]
+                self.log("UID {0} received from Watchdog".format(self.uid))
         if (cbt.action == "DO_SEND_MSG"):
+            if (self.uid == ""):
+                self.log("UID not yet received- Not Ready.")
+                return
             method  = cbt.data.get("method")
             peer_uid = cbt.data.get("uid")
             try:
@@ -276,6 +294,10 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                     self.log("sent xmpp_advt to {0}".format(peer))
         
     def timer_method(self):
+        if (self.uid == "" and self.vpn_type == "SocialVPN"):
+            self.log("UID not yet received- Not Ready.")
+            self.registerCBT('Watchdog', 'QUERY_IPOP_STATE')
+            return
         try:
             if (time.time() - self.last_sent_advt > self.advt_delay):
                 # see if I recvd a advertisement in this time period
