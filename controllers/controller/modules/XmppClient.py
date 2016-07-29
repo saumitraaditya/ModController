@@ -33,10 +33,12 @@ class Ipop_Msg(ElementBase):
 class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
     def __init__(self,CFxHandle,paramDict,ModuleName):
         ControllerModule.__init__(self,CFxHandle,paramDict,ModuleName)
-        self.xmpp_peers = defaultdict(int)
+        # keeps track of last recvd advertisement and if node is active on XMPP.
+        self.xmpp_peers = defaultdict(lambda:[0,False])
         # need to maintain uid<->jid mapping to route xmpp messages.
         self.uid_jid = {}
-        self.jid_uid = defaultdict(lambda:['',False])
+        # FullJID,Knows my UID,num(Correct advts recvd)
+        self.jid_uid = defaultdict(lambda:['',False,0])
         self.xmpp_username = self.CMConfig.get("xmpp_username")
         self.xmpp_passwd = self.CMConfig.get("xmpp_password")
         self.xmpp_host = self.CMConfig.get("xmpp_host")
@@ -114,8 +116,8 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
     # will need to handle presence, to keep track of who is online.    
     def handle_presence(self,presence):
         presence_sender = presence['from']
-        if (self.xmpp_peers[presence_sender]==0):
-            self.xmpp_peers[presence_sender]=1
+        if (self.xmpp_peers[presence_sender][1]==False):
+            self.xmpp_peers[presence_sender]=[time.time(),True]
             self.log("presence received from {0}".format(presence_sender))
         
         
@@ -141,11 +143,15 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
             try:
                 peer_uid,target_uid = payload.split("#")
                 if (peer_uid != self.uid):
+                    # update last known advt reception time in xmpp_peers
+                    self.xmpp_peers[sender_jid][0] = time.time()
                     self.uid_jid[peer_uid] = sender_jid
                     self.jid_uid[msg['from']][0] = peer_uid
                     # sender knows my uid, so I will not send an advert to him
                     if (target_uid == self.uid):
                         self.jid_uid[msg['from']][1] = True
+                        # recvd correct advertisement
+                        self.jid_uid[msg['from']][2]+=1
                     else:
                        self.jid_uid[msg['from']][1] = False 
                     msg = {}
@@ -296,11 +302,24 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
     def sendXmppAdvt(self):
         if (self.uid != ""):
             for peer in self.xmpp_peers.keys():
-                if (self.jid_uid[peer][1] == False):
-                    setup_load = "xmpp_advertisement"+"#"+"None"
-                    msg_load = str(self.uid) + "#" + str(self.jid_uid[peer][0])
-                    self.sendMsg(peer,setup_load,msg_load)
-                    self.log("sent xmpp_advt to {0}".format(peer))
+                # check unavailable nodes-nodes that are no longer XMPP online.
+                if (time.time() - self.xmpp_peers[peer][0]) < 3*self.MAX_ADVT_DELAY:
+                    if (self.jid_uid[peer][1] == True and self.jid_uid[peer][2] < 10):
+                        # Do not send an advt
+                        continue
+                    else:
+                        # False indicates that peer node does not knows my UID.
+                        # in either case- Target does not has my correct UID
+                        # target has sent me more than thresh-hold correct advts
+                        self.jid_uid[peer][2] = 0
+                        setup_load = "xmpp_advertisement"+"#"+"None"
+                        msg_load = str(self.uid) + "#" + str(self.jid_uid[peer][0])
+                        self.sendMsg(peer,setup_load,msg_load)
+                        self.log("sent xmpp_advt to {0}".format(peer))
+                else:
+                    # Mark node Inactive
+                    self.xmpp_peers[peer][1] = False
+                    
         
     def timer_method(self):
         if (self.uid == "" and self.vpn_type == "SocialVPN"):
