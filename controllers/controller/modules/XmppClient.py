@@ -305,8 +305,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 if (time.time() - self.xmpp_peers[peer][0]) < 3*self.MAX_ADVT_DELAY:
                     # If I have recvd more than 10 correct advertisements from peer
                     # don't reply back. 
-                    if (self.jid_uid[peer][1] == True and self.jid_uid[peer][2] > 10)\
-                        and override != True:
+                    if (self.jid_uid[peer][1] == True and override != True:):
                         # Do not send an advt
                             continue
                     else:
