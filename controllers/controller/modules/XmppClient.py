@@ -174,7 +174,6 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
             sender_uid,recvd_data = payload.split("#")
             # If I recvd XMPP msg from this peer, I should record his UID-JID & JID-UID
             self.uid_jid[sender_uid] = sender_jid
-            self.jid_uid[sender_jid][0] = sender_uid
             if (msg_type == "con_req"):
                 msg = {}
                 msg["uid"] = sender_uid
