@@ -302,29 +302,25 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         if (self.uid != ""):
             for peer in self.xmpp_peers.keys():
                 send_advt = False
-                # check unavailable nodes-nodes that are no longer XMPP online.
-                if (time.time() - self.xmpp_peers[peer][0]) < 3*self.MAX_ADVT_DELAY:
-                    # True indicates that peer node does not knows my UID.
-                    # If I have recvd more than 10 correct advertisements from peer
-                    # don't reply back. 
-                    if (self.jid_uid[peer][1] == True and self.jid_uid[peer][2]%10==0):
-                        send_advt = True
-                        self.jid_uid[peer][2] = 1
-                    elif (self.jid_uid[peer][1] == True and override != True):
-                        # Do not send an advt
-                        send_advt = False
-                    else:
-                        # If here, peer does not knows my UID
-                        send_advt = True
-                        
-                    if (send_advt == True):
-                        setup_load = "xmpp_advertisement"+"#"+"None"
-                        msg_load = str(self.uid) + "#" + str(self.jid_uid[peer][0])
-                        self.sendMsg(peer,setup_load,msg_load)
-                        self.log("sent xmpp_advt to {0}".format(peer))
+                # True indicates that peer node does not knows my UID.
+                # If I have recvd more than 10 correct advertisements from peer
+                # don't reply back. 
+                if (self.jid_uid[peer][1] == True and self.jid_uid[peer][2]%10==0):
+                    send_advt = True
+                    self.jid_uid[peer][2] = 1
+                elif (self.jid_uid[peer][1] == True and override != True):
+                    # Do not send an advt
+                    send_advt = False
                 else:
-                    # Mark node Inactive
-                    self.xmpp_peers[peer][1] = False
+                    # If here, peer does not knows my UID
+                    send_advt = True
+                    
+                if (send_advt == True):
+                    setup_load = "xmpp_advertisement"+"#"+"None"
+                    msg_load = str(self.uid) + "#" + str(self.jid_uid[peer][0])
+                    self.sendMsg(peer,setup_load,msg_load)
+                    self.log("sent xmpp_advt to {0}".format(peer))
+               
                     
         
     def timer_method(self):
