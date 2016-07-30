@@ -298,14 +298,17 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                 self.sendMsg(peer_jid,setup_load,msg_payload)
                 self.log("sent ping to {0}".format(self.uid_jid[peer_uid]))
                 
-    def sendXmppAdvt(self):
+    def sendXmppAdvt(self,override=False):
         if (self.uid != ""):
             for peer in self.xmpp_peers.keys():
                 # check unavailable nodes-nodes that are no longer XMPP online.
                 if (time.time() - self.xmpp_peers[peer][0]) < 3*self.MAX_ADVT_DELAY:
-                    if (self.jid_uid[peer][1] == True and self.jid_uid[peer][2] < 10):
+                    # If I have recvd more than 10 correct advertisements from peer
+                    # don't reply back. 
+                    if (self.jid_uid[peer][1] == True and self.jid_uid[peer][2] > 10)\
+                        and override != True:
                         # Do not send an advt
-                        continue
+                            continue
                     else:
                         # False indicates that peer node does not knows my UID.
                         # in either case- Target does not has my correct UID
@@ -341,8 +344,8 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                         self.log("Delaying the XMPP advt timer \
                             to {0} seconds".format(self.advt_delay))
                 else:
-                    # send the advertisement anyway.
-                    self.sendXmppAdvt()
+                    # send the advertisement anyway, after MaxDelay.
+                    self.sendXmppAdvt(override=True)
                     # update xmpp tracking parameters.
                     self.last_sent_advt = time.time()
                     self.xmpp_advt_recvd = False
