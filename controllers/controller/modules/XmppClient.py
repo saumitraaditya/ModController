@@ -38,7 +38,7 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
         # need to maintain uid<->jid mapping to route xmpp messages.
         self.uid_jid = {}
         # FullJID,Knows my UID,num(Correct advts recvd)
-        self.jid_uid = defaultdict(lambda:['',False,0])
+        self.jid_uid = defaultdict(lambda:['',False,1])
         self.xmpp_username = self.CMConfig.get("xmpp_username")
         self.xmpp_passwd = self.CMConfig.get("xmpp_password")
         self.xmpp_host = self.CMConfig.get("xmpp_host")
@@ -301,18 +301,23 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
     def sendXmppAdvt(self,override=False):
         if (self.uid != ""):
             for peer in self.xmpp_peers.keys():
+                send_advt = False
                 # check unavailable nodes-nodes that are no longer XMPP online.
                 if (time.time() - self.xmpp_peers[peer][0]) < 3*self.MAX_ADVT_DELAY:
+                    # True indicates that peer node does not knows my UID.
                     # If I have recvd more than 10 correct advertisements from peer
                     # don't reply back. 
-                    if (self.jid_uid[peer][1] == True and override != True):
+                    if (self.jid_uid[peer][1] == True and self.jid_uid[peer][2]%10==0):
+                        send_advt = True
+                        self.jid_uid[peer][2] = 1
+                    elif (self.jid_uid[peer][1] == True and override != True):
                         # Do not send an advt
-                            continue
+                        send_advt = False
                     else:
-                        # False indicates that peer node does not knows my UID.
-                        # in either case- Target does not has my correct UID
-                        # target has sent me more than thresh-hold correct advts
-                        self.jid_uid[peer][2] = 0
+                        # If here, peer does not knows my UID
+                        send_advt = True
+                        
+                    if (send_advt == True):
                         setup_load = "xmpp_advertisement"+"#"+"None"
                         msg_load = str(self.uid) + "#" + str(self.jid_uid[peer][0])
                         self.sendMsg(peer,setup_load,msg_load)
@@ -337,7 +342,8 @@ class XmppClient(ControllerModule,sleekxmpp.ClientXMPP):
                     self.last_sent_advt = time.time()
                     self.xmpp_advt_recvd = False
                     self.advt_delay = self.INITIAL_ADVT_DELAY
-                # Have not heard from anyone in a while
+                # Have not heard from anyone in a while, Handles XMPP disconnection
+                # do not want to overwhelm with queued messages.
                 elif (self.advt_delay < self.MAX_ADVT_DELAY):
                         self.advt_delay = 2 * self.advt_delay
                         self.log("Delaying the XMPP advt timer \
