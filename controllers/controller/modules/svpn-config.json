@@ -58,9 +58,9 @@
   },
   "XmppClient": {
     "enabled": true,
-    "xmpp_username": "sam_pop@dukgo.com",
-    "xmpp_password": "acis-ipop1",
-    "xmpp_host": "dukgo.com",
+    "xmpp_username": "xxxxxxx",
+    "xmpp_password": "xxxxxxx",
+    "xmpp_host": "xxxxxx",
     "xmpp_port": 5222,
     "xmpp_authentication_method": "password",
     "xmpp_accept_untrusted_server": false,
